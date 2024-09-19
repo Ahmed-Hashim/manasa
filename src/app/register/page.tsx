@@ -14,7 +14,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
-
+  const role = "ADMIN";
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -28,6 +28,7 @@ export default function Register() {
           name,
           email,
           password,
+          role,
         }),
       });
 

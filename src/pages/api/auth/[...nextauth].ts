@@ -1,9 +1,16 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, User } from '@prisma/client'
 import bcrypt from 'bcrypt'
 
 const prisma = new PrismaClient()
+
+// Add this function
+import jwt from 'jsonwebtoken'
+
+const generateAccessToken = (user: User) => {
+  return jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, { expiresIn: '1d' })
+}
 
 export default NextAuth({
   providers: [
@@ -14,53 +21,66 @@ export default NextAuth({
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        const email: string = credentials?.email ?? ''  // Explicitly typed as string
-        const password: string = credentials?.password ?? ''  // Explicitly typed as string
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email and password required')
+        }
 
-        const user = await prisma.user.findUnique({ where: { email } })
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+          include: { profile: true }
+        })
+        
 
         if (!user) {
           throw new Error('No user found with this email')
         }
 
-        const isValid = await bcrypt.compare(password, user.hashedPassword)
+        const isValid = await bcrypt.compare(credentials.password, user.hashedPassword)
 
         if (!isValid) {
           throw new Error('Invalid password')
         }
 
-        // Return user object with id and role, explicitly typed as string
+        const accessToken = generateAccessToken(user);
+
+        
+        // Modify the return statement
         return {
-          id: user.id as string,  // Explicitly typed as string
-          email: user.email as string,  // Explicitly typed as string
-          name: user.name as string,  // Explicitly typed as string
-          role: user.role as string  // Explicitly typed as string
+          id: user.id,
+          email: user.email,
+          name: user.name || '',
+          role: user.role || '',
+          imageUrl: user.profile?.imageUrl || null,
+          token :accessToken,
         }
       }
     })
   ],
-  pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error'
-  },
-  session: {
-    strategy: 'jwt',
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id as string  // Explicitly typed as string
-        token.role = user.role as string  // Explicitly typed as string
+        token.id = user.id;
+        token.role = user.role;
+        token.imageUrl = user.imageUrl; // Add this line
+        token.accessToken = user.token;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string  // Explicitly typed as string
-        session.user.role = token.role as string  // Explicitly typed as string
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.imageUrl = token.imageUrl as string | null;
+        session.user.token = token.accessToken as string | undefined;
       }
-      return session
+      return session;
     }
+  },
+  pages: {
+    signIn: '/signin',
+  },
+  session: {
+    strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
 })

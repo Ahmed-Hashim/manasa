@@ -12,17 +12,34 @@ export interface Profile {
   }
   
   export interface Program {
-    id: string
-    title: string
-    description: string
-    userId: string
-    status: string
-    createdAt: Date
-    updatedAt: Date
+    id: string;
+    candidateName?: string;
+    partyName?: string;
+    age?: number;
+    educationLevel?: string;
+    programDetails?: string;
+    vision?: string;
+    goals?: string;
+    priorities?: string;
+    kpis?: string;
+    collaboration?: string;
+    trackingMechanism?: string;
+    proposedPrograms?: string;
+    image?: string;
+    cv?: string;
+    educationCertificate?: string;
+    userId: string;
+    status?: string;
+    createdAt: Date;
+    updatedAt: Date;
+    user?: {
+      name: string;
+    };
   }
   
   export interface User {
     id: string
+    imageUrl:string
     email: string
     name?: string
     role: string
@@ -32,4 +49,3 @@ export interface Profile {
     createdAt: Date
     updatedAt: Date
   }
-  

@@ -1,278 +1,336 @@
 "use client";
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState } from "react";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+  Stepper,
+  Step,
+  StepLabel,
+  Button,
+  TextField,
+  Box,
+  Typography,
+} from "@mui/material";
+import dynamic from "next/dynamic";
+import "react-quill/dist/quill.snow.css";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+// Dynamically load ReactQuill for rich text fields
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
+// Main Component
 export default function AddProgram() {
-  const { toast } = useToast();
+  const steps = [
+    "بيانات المرشح",
+    "المرفقات",
+    "تفاصيل البرنامج",
+    "المؤشرات والتعاون",
+  ];
+
+  const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     candidateName: "",
     partyName: "",
+    age: "",
+    educationLevel: "",
+    image: null,
+    cv: null,
+    educationCertificate: null,
     programDetails: "",
-    image: null as File | null,
-    cv: null as File | null,
+    vision: "",
+    goals: "",
+    priorities: "",
+    kpis: "",
+    collaboration: "",
+    trackingMechanism: "",
+    proposedPrograms: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real application, you would send this data to a server
-    console.log("تم التقديم:", formData);
-    toast({
-      title: "تم تقديم البرنامج",
-      description: "تم تقديم برنامجك الانتخابي بنجاح.",
-    });
-    setFormData({
-      candidateName: "",
-      partyName: "",
-      programDetails: "",
-      image: null,
-      cv: null,
-    });
-  };
+  const router = useRouter();
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  // Handlers for changing input and file inputs
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFormData({ ...formData, [e.target.name]: e.target.files[0] });
+    const { name, files } = e.target;
+    if (files && files.length > 0) {
+      setFormData({ ...formData, [name]: files[0] });
+    }
+  };
+
+  const handleEditorChange = (name: string, value: string) => {
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleNext = () =>
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  const handleBack = () =>
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Create a FormData object to handle file uploads
+    const data = new FormData();
+    data.append("candidateName", formData.candidateName);
+    data.append("partyName", formData.partyName);
+    data.append("age", formData.age);
+    data.append("educationLevel", formData.educationLevel);
+    data.append("programDetails", formData.programDetails);
+    data.append("vision", formData.vision);
+    data.append("goals", formData.goals);
+    data.append("priorities", formData.priorities);
+    data.append("kpis", formData.kpis);
+    data.append("collaboration", formData.collaboration);
+    data.append("trackingMechanism", formData.trackingMechanism);
+    data.append("proposedPrograms", formData.proposedPrograms);
+
+    if (formData.image) data.append("image", formData.image);
+    if (formData.cv) data.append("cv", formData.cv);
+    if (formData.educationCertificate)
+      data.append("educationCertificate", formData.educationCertificate);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/programs/programs", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: data,
+      });
+
+      if (response.ok) {
+        toast.success("تم تقديم البرنامج بنجاح");
+        setTimeout(() => {
+          router.push("/");
+        }, 2000);
+      } else {
+        // Parse the error response
+        const errorData = await response.json();
+        console.log(errorData);
+        
+        const errorMessage = errorData.message || "فشل تقديم البرنامج";
+        toast.error(errorMessage);
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      toast.error("حدث خطأ أثناء تقديم البرنامج");
+    }
+  };
+
+  // Render Step Content
+  const renderStepContent = (step: number) => {
+    switch (step) {
+      case 0:
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              // label="اسم المرشح"
+              name="candidateName"
+              value={formData.candidateName}
+              onChange={handleInputChange}
+              required
+              fullWidth
+              placeholder="اسم المرشح *"
+              className="flex justify-end items-center text-right"
+            />
+            <TextField
+              placeholder="اسم اللجنه *"
+              className="flex justify-end items-center text-right"
+              name="partyName"
+              value={formData.partyName}
+              onChange={handleInputChange}
+              required
+              fullWidth
+            />
+            <TextField
+              placeholder="العمر *"
+              className="flex justify-end items-center text-right"
+              name="age"
+              type="number"
+              value={formData.age}
+              onChange={handleInputChange}
+              required
+              fullWidth
+            />
+            <TextField
+              placeholder="المستوى التعليمي *"
+              className="flex justify-end items-center text-right"
+              name="educationLevel"
+              value={formData.educationLevel}
+              onChange={handleInputChange}
+              required
+              fullWidth
+            />
+          </Box>
+        );
+      case 1:
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography>رفع الملفات:</Typography>
+            <Button variant="contained" component="label">
+              صورة المرشح
+              <input
+                type="file"
+                name="image"
+                accept="image/*"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Button>
+            <Button variant="contained" component="label">
+              السيرة الذاتية (PDF)
+              <input
+                type="file"
+                name="cv"
+                accept="application/pdf"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Button>
+            <Button variant="contained" component="label">
+              شهادة التعليم (PDF)
+              <input
+                type="file"
+                name="educationCertificate"
+                accept="application/pdf"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Button>
+          </Box>
+        );
+      case 2:
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }} mb={10}>
+            <Typography className="font-bold text-xl">تفاصيل البرنامج</Typography>
+            <ReactQuill
+              value={formData.programDetails}
+              onChange={(value) => handleEditorChange("programDetails", value)}
+              placeholder="أدخل تفاصيل البرنامج الانتخابي"
+              style={{ height: "200px", paddingBottom: "80px" }}
+            />
+            <Typography className="font-bold text-xl">الرؤية العامة</Typography>
+            <ReactQuill
+              value={formData.vision}
+              onChange={(value) => handleEditorChange("vision", value)}
+              placeholder="أدخل الرؤية العامة للبرنامج"
+              style={{ height: "200px", paddingBottom: "80px" }}
+            />
+            <Typography className="font-bold text-xl">الأهداف</Typography>
+            <ReactQuill
+              value={formData.goals}
+              onChange={(value) => handleEditorChange("goals", value)}
+              placeholder="أدخل الأهداف طويلة ومتوسطة وقصيرة المدى"
+              style={{ height: "200px" }}
+            />
+          </Box>
+        );
+      case 3:
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }} mb={10}>
+            <Typography className="font-bold text-xl">الأولويات الاستراتيجية</Typography>
+            <ReactQuill
+              value={formData.priorities}
+              onChange={(value) => handleEditorChange("priorities", value)}
+              placeholder="أدخل الأولويات لكل لجنة"
+              style={{ height: "200px", paddingBottom: "80px" }}
+            />
+            <Typography className="font-bold text-xl">مؤشرات الأداء</Typography>
+            <ReactQuill
+              value={formData.kpis}
+              onChange={(value) => handleEditorChange("kpis", value)}
+              placeholder="أدخل مؤشرات الأداء"
+              style={{ height: "200px", paddingBottom: "80px" }}
+            />
+            <Typography className="font-bold text-xl">التعاون بين اللجان</Typography>
+            <ReactQuill
+              value={formData.collaboration}
+              onChange={(value) => handleEditorChange("collaboration", value)}
+              placeholder="أدخل آليات التعاون بين اللجان"
+              style={{ height: "200px", paddingBottom: "80px" }}
+            />
+            <Typography className="font-bold text-xl">آلية المتابعة والتقييم</Typography>
+            <ReactQuill
+              value={formData.trackingMechanism}
+              onChange={(value) =>
+                handleEditorChange("trackingMechanism", value)
+              }
+              placeholder="أدخل آليات المتابعة والتقييم"
+              style={{ height: "200px", paddingBottom: "80px" }}
+            />
+            <Typography className="font-bold text-xl">البرامج المقترحة</Typography>
+            <ReactQuill
+              value={formData.proposedPrograms}
+              onChange={(value) =>
+                handleEditorChange("proposedPrograms", value)
+              }
+              placeholder="أدخل البرامج المقترحة"
+              style={{ height: "200px" }}
+            />
+          </Box>
+        );
+      default:
+        return "خطوة غير معروفة";
     }
   };
 
   return (
-    <Card className="max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl">إضافة برنامج انتخابي</CardTitle>
-        <CardDescription>
-          قدم تفاصيل برنامجك الانتخابي هنا. جميع الحقول مطلوبة ما لم يذكر خلاف
-          ذلك.
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="candidateName">اسم المرشح</Label>
-            <Input
-              id="candidateName"
-              name="candidateName"
-              value={formData.candidateName}
-              onChange={handleChange}
-              required
-              placeholder="أدخل الاسم الكامل للمرشح"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="partyName">اسم الحزب</Label>
-            <Input
-              id="partyName"
-              name="partyName"
-              value={formData.partyName}
-              onChange={handleChange}
-              required
-              placeholder="أدخل اسم الحزب السياسي"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="image">صورة المرشح (اختياري)</Label>
-            <Input
-              id="image"
-              name="image"
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cv">السيرة الذاتية للمرشح (اختياري)</Label>
-            <Input
-              id="cv"
-              name="cv"
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={handleFileChange}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="programDetails">تفاصيل البرنامج</Label>
-            <Textarea
-              id="programDetails"
-              name="programDetails"
-              value={formData.programDetails}
-              onChange={handleChange}
-              required
-              rows={10}
-              placeholder="صف برنامجك الانتخابي بالتفصيل"
-            />
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1">
-                <AccordionTrigger>ماذا تضمن في برنامجك</AccordionTrigger>
-                <AccordionContent>
-                  <h1>
-                    برنامج الأمين العام لمنصة الشباب العربي للتنمية المستدامة
-                  </h1>
+    <div className="container mt-8">
+      <Card>
+        <CardHeader className="text-center font-bold text-2xl">
+          قم بادخال البيانات الخاصه بالبرنامج الانتخابي الخاص بك
+        </CardHeader>
+        <CardContent>
+          <Box sx={{ width: "100%", mt: 4 }}>
+            <ToastContainer position="top-right" rtl={true} />
+            <Stepper activeStep={activeStep} alternativeLabel dir="ltr" className="mb-8">
+              {steps.map((label, index) => (
+                <Step key={index}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
 
-                  <div className="section">
-                    <h2>1. الرؤية العامة للبرنامج</h2>
-                    <p>
-                      تتضمن الرؤية العامة للبرنامج تحديد الأهداف الاستراتيجية
-                      والوسائل التي ستمكن المنصة من تحقيق التنمية المستدامة من
-                      خلال التعاون بين اللجان المختلفة وتعزيز العمل الجماعي.
-                    </p>
-                  </div>
+            <Box sx={{ p: 2 }}>{renderStepContent(activeStep)}</Box>
 
-                  <div className="section">
-                    <h2>2. الأهداف العامة</h2>
-                    <ul>
-                      <li>
-                        <strong>الأهداف الطويلة المدى:</strong> تحديد أهداف
-                        استراتيجية تسعى لتحقيق التنمية المستدامة على مدى خمس
-                        سنوات.
-                      </li>
-                      <li>
-                        <strong>الأهداف المتوسطة المدى:</strong> أهداف يمكن
-                        تحقيقها في غضون سنتين إلى ثلاث سنوات.
-                      </li>
-                      <li>
-                        <strong>الأهداف القصيرة المدى:</strong> أهداف سنوية أو
-                        نصف سنوية.
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="section">
-                    <h2>3. الأولويات الاستراتيجية لكل لجنة فرعية</h2>
-
-                    <div className="sub-section">
-                      <h3>لجنة الموارد البشرية</h3>
-                      <ul>
-                        <li>
-                          <strong>الإطار الزمني:</strong> تحديد مواعيد واضحة لكل
-                          هدف.
-                        </li>
-                        <li>
-                          <strong>كيفية التحقق:</strong> من خلال مراجعة الأداء
-                          والتقارير الدورية.
-                        </li>
-                        <li>
-                          <strong>الأشخاص المسؤولون:</strong> تعيين مسؤولين لكل
-                          هدف ومتابعة تقدمهم.
-                        </li>
-                        <li>
-                          <strong>مؤشرات القياس:</strong> استخدام مؤشرات أداء
-                          محددة لتقييم التقدم.
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="sub-section">
-                      <h3>لجنة الإعلام</h3>
-                      <p>
-                        تحديد الاستراتيجيات الإعلامية والوسائل التي سيتم
-                        استخدامها لنشر أهداف المنصة وتعزيز رسالتها.
-                      </p>
-                    </div>
-
-                    <div className="sub-section">
-                      <h3>لجنة الشؤون القانونية</h3>
-                      <p>
-                        تطوير السياسات والإجراءات القانونية لضمان الالتزام
-                        بالقوانين المحلية والدولية.
-                      </p>
-                    </div>
-
-                    <div className="sub-section">
-                      <h3>لجنة العلاقات الخارجية</h3>
-                      <p>
-                        بناء وتعزيز العلاقات مع المنظمات الدولية والشركاء
-                        الخارجيين.
-                      </p>
-                    </div>
-
-                    <div className="sub-section">
-                      <h3>لجنة العلاقات العامة</h3>
-                      <p>
-                        إدارة السمعة العامة للمنصة والتواصل مع المجتمع المحلي.
-                      </p>
-                    </div>
-
-                    <div className="sub-section">
-                      <h3>لجنة التنظيم</h3>
-                      <p>تنظيم الفعاليات والأنشطة وضمان سير العمل بفعالية.</p>
-                    </div>
-
-                    <div className="sub-section">
-                      <h3>لجنة متابعة أهداف التنمية المستدامة</h3>
-                      <p>
-                        رصد وتقييم التقدم المحرز في تحقيق أهداف التنمية
-                        المستدامة.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="section">
-                    <h2>4. التكامل والتعاون بين اللجان</h2>
-                    <p>
-                      تحديد كيفية تعزيز التعاون بين اللجان المختلفة لضمان تحقيق
-                      الأهداف المشتركة.
-                    </p>
-                  </div>
-
-                  <div className="section">
-                    <h2>5. كيفية تحديد مؤشرات قياس الأداء (KPIs)</h2>
-                    <p>
-                      تحديد مؤشرات الأداء الرئيسية التي ستستخدم لتقييم نجاح
-                      الأنشطة والبرامج.
-                    </p>
-                  </div>
-
-                  <div className="section">
-                    <h2>6. آلية المتابعة المستمرة للتقدم</h2>
-                    <p>
-                      وضع خطة لمتابعة تقدم البرامج والأنشطة بانتظام لضمان تحقيق
-                      الأهداف.
-                    </p>
-                  </div>
-
-                  <div className="section">
-                    <h2>7. البرامج المقترحة للمنصة</h2>
-                    <p>
-                      عرض البرامج المختلفة التي سيتم تنفيذها لتحقيق أهداف
-                      المنصة، مع تقديم عرض تفصيلي لكل برنامج.
-                    </p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </div>
+            <Box
+              px={2}
+              sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}
+            >
+              <Button
+                disabled={activeStep === 0}
+                onClick={handleBack}
+                variant="contained"
+                color="primary"
+              >
+                العودة
+              </Button>
+              {activeStep === steps.length - 1 ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubmit}
+                >
+                  تقديم
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNext}
+                >
+                  التالي
+                </Button>
+              )}
+            </Box>
+          </Box>
         </CardContent>
-        <CardFooter>
-          <Button type="submit" className="w-full">
-            تقديم البرنامج
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+      </Card>
+    </div>
   );
 }

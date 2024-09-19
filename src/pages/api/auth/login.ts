@@ -12,6 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { email, password } = req.body
+
     const user = await prisma.user.findUnique({ where: { email } })
 
     if (!user) {
@@ -24,14 +25,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ message: 'Invalid credentials' })
     }
 
+    // Create JWT token
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
+      { userId: user.id, email: user.email, role: user.role, name: user.name },
       process.env.JWT_SECRET!,
       { expiresIn: '1d' }
     )
 
-    res.status(200).json({ token })
+    // Return the token
+    return res.status(200).json({ token })
   } catch (error) {
-    res.status(400).json({ message: 'Error logging in', error })
+    return res.status(400).json({ message: 'Error logging in', error })
   }
 }

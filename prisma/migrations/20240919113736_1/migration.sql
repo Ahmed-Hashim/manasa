@@ -4,7 +4,7 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "hashedPassword" TEXT NOT NULL,
     "name" TEXT,
-    "role" TEXT NOT NULL DEFAULT 'USER',
+    "role" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
@@ -26,13 +26,25 @@ CREATE TABLE "Profile" (
 -- CreateTable
 CREATE TABLE "Program" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "title" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "candidateName" TEXT,
+    "partyName" TEXT,
+    "programDetails" TEXT,
+    "vision" TEXT,
+    "goals" TEXT,
+    "priorities" TEXT,
+    "kpis" TEXT,
+    "collaboration" TEXT,
+    "trackingMechanism" TEXT,
+    "proposedPrograms" TEXT,
+    "age" INTEGER,
+    "educationLevel" TEXT,
+    "image" TEXT,
+    "cv" TEXT,
+    "educationCertificate" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Program_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "userId" TEXT,
+    CONSTRAINT "Program_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable

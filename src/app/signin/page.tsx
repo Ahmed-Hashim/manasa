@@ -1,8 +1,8 @@
-'use client'
+'use client'; // Ensures this is a Client Component
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
@@ -10,24 +10,25 @@ import { Label } from "@/components/ui/label"
 import Link from 'next/link'
 
 export default function SignIn() {
-  const [email, setEmail] = useState<string>('')
-  const [password, setPassword] = useState<string>('')
-  const [error, setError] = useState<string>('')
-  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const router = useRouter() 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     const result = await signIn('credentials', {
       redirect: false,
       email,
       password,
     })
 
-    if (result && result.error) {
-      setError(result.error)
+    console.log(result);
+    
+
+    if (result?.error) {
+      console.error(result.error)
     } else {
-      router.push('/')
+      router.push('/') 
     }
   }
 
@@ -41,7 +42,6 @@ export default function SignIn() {
         <form onSubmit={handleSubmit}>
           <CardContent>
             <div className="grid w-full items-center gap-4">
-              {error && <p className="text-red-500">{error}</p>}
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="email">البريد الإلكتروني</Label>
                 <Input 
@@ -69,7 +69,7 @@ export default function SignIn() {
             <Button className="w-full" type="submit">تسجيل الدخول</Button>
             <p className="mt-4 text-sm text-center">
               ليس لديك حساب؟{' '}
-              <Link href="/register" className="text-primary hover:underline">
+              <Link href="/signup" className="text-primary hover:underline">
                 سجل الآن
               </Link>
             </p>
