@@ -44,18 +44,13 @@ const Footer = () => {
             </ul>
           </div> */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">اتصل بنا</h4>
+            <h4 className="text-lg font-semibold mb-4">من نحن</h4>
             <p className="text-gray-400">
-              123 شارع الديمقراطية
-              <br />
-              القاهرة
-              <br />
-              مصر
+              مركز الانتخابات منصة الشباب العربي للتنمية المستدامة
             </p>
             <p className="text-gray-400 mt-2">
-              البريد الإلكتروني: info@electionhub.com
+              البريد الإلكتروني: arabyouthcouncil3@gmail.com
               <br />
-              الهاتف: 0123456789
             </p>
           </div>
         </div>
